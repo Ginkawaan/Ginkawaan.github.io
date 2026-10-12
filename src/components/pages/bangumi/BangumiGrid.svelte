@@ -94,8 +94,12 @@ async function fetchCategory(
 
 	while (true) {
 		if (maxTotal > 0 && allItems.length >= maxTotal) break;
-		const url = `${apiUrl}/v0/users/${username}/collections?subject_type=${subjectType}&limit=${limit}&offset=${offset}`;
-		const resp = await fetch(url, { headers: { Accept: "application/json" } });
+		// 加时间戳 + no-store：避免浏览器/中间层缓存，确保每次打开都能拿到最新收藏数据
+		const url = `${apiUrl}/v0/users/${username}/collections?subject_type=${subjectType}&limit=${limit}&offset=${offset}&_t=${Date.now()}`;
+		const resp = await fetch(url, {
+			headers: { Accept: "application/json" },
+			cache: "no-store",
+		});
 		if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
 		const data = await resp.json();
 		const batch: UserSubjectCollection[] = data.data || [];
