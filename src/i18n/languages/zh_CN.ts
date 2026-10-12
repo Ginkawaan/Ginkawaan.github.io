@@ -129,10 +129,10 @@ export const zh_CN: Translation = {
 	[Key.updatedAt]: "更新于",
 	[Key.readTime]: "阅读时长",
 	[Key.license]: "许可协议",
-	[Key.bangumi]: "番组计划",
+	[Key.bangumi]: "收藏",
 
 	// 番组计划筛选和状态文本
-	[Key.bangumiTitle]: "我的番组计划",
+	[Key.bangumiTitle]: "我的收藏",
 	[Key.bangumiSubtitle]: "记录我的二次元之旅",
 	[Key.bangumiFilterAll]: "全部",
 	[Key.bangumiFilterWatched]: "看过",
@@ -170,7 +170,7 @@ export const zh_CN: Translation = {
 	[Key.bangumiEmptyReason]: "可能的原因：用户名不存在、网络连接问题或API限制",
 	[Key.bangumiFetchError]: "Bangumi 数据拉取失败",
 	[Key.bangumiFetchErrorDesc]:
-		"构建时从 Bangumi API 获取数据失败，该页面内容暂不可用。",
+		"无法连接 Bangumi API。常见原因：API 地址不可访问（可尝试更换第三方镜像）、用户 ID 不存在，或网络限制。",
 	[Key.bangumiUsername]: "用户名",
 	[Key.bangumiApi]: "API",
 	[Key.bangumiConfigTip]: "提示：请在页面配置中设置正确的Bangumi用户名",
@@ -188,7 +188,7 @@ export const zh_CN: Translation = {
 	[Key.bangumiCategoryReal]: "三次元",
 
 	// 番组数据更新
-	[Key.bangumiLastUpdated]: "数据更新日期",
+	[Key.bangumiLastUpdated]: "数据更新于",
 	[Key.bangumiUpdatedAt]: "构建时间",
 	[Key.bangumiDataStatic]: "静态数据",
 

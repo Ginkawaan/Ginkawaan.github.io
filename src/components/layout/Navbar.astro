@@ -183,9 +183,7 @@ const logoVariants = await Promise.all(
                                         ) : (
                                             <img src={variant.src} alt={logoAlt} class={variant.class} data-logo-theme={variant.theme} fetchpriority="high" />
                                         ))
-                                    ) : (
-                                        <Icon name="material-symbols:home-pin-outline" class="navbar-logo text-[1.75rem] mb-1 mr-2" />
-                                    )}
+                                    ) : null}
                     {navbarTitle}
                 </div>
             </a>

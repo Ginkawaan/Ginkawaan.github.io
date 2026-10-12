@@ -225,18 +225,17 @@ const activeTab = tabs[0]?.id || "anime";
             <div class="mb-6">
                 <div class="page-heading">
                     <div class="page-icon" aria-hidden="true">
-                        <Icon name="material-symbols:movie" />
+                        <Icon name="material-symbols:video-library-rounded" />
                     </div>
                     <div>
                         <h2>{i18n(I18nKey.bangumi)}</h2>
-                        <p>{i18n(I18nKey.bangumiSubtitle)}</p>
                     </div>
-                    {!isDynamic && (
                     <p class="page-updated">
                         <span>{i18n(I18nKey.bangumiLastUpdated)}</span>
-                        <span>{buildTime}</span>
+                        <span id="bangumi-updated-at">
+                          {isDynamic ? "加载中…" : buildTime}
+                        </span>
                     </p>
-                    )}
                 </div>
             </div>
 
@@ -308,6 +307,55 @@ const activeTab = tabs[0]?.id || "anime";
     </div>
   </div>
 </MainGridLayout>
+
+{
+  /* dynamic 模式下，用客户端时间填充"数据更新日期"（数据是实时拉取的）
+     注意：本站启用了 swup，站内切页时只会替换 DOM、不会重新执行 <script>，
+     所以必须把填充逻辑注册到 swup 生命周期（page:view / content:replace）上，
+     否则从其它页面点进来会永远停在"加载中…"。静态模式下时间已在服务端渲染好，无需处理。 */
+}
+{isDynamic && (
+  <script is:inline>
+    (function () {
+      function fillBangumiUpdatedAt() {
+        var el = document.getElementById("bangumi-updated-at");
+        if (!el) return;
+        var d = new Date();
+        var pad = function (n) { return String(n).padStart(2, "0"); };
+        el.textContent =
+          d.getFullYear() + "年" + (d.getMonth() + 1) + "月" + d.getDate() + "日 " +
+          pad(d.getHours()) + ":" + pad(d.getMinutes()) + ":" + pad(d.getSeconds());
+      }
+
+      // 首次整页加载
+      if (document.readyState === "loading") {
+        document.addEventListener("DOMContentLoaded", fillBangumiUpdatedAt);
+      } else {
+        fillBangumiUpdatedAt();
+      }
+
+      // swup 切页：监听 DOM 事件 + hooks 双保险（与 TypewriterText 等组件一致）。
+      // 用一次性标记防止脚本被重复执行时叠加监听器。
+      if (!window.__bangumiUpdatedAtInit) {
+        window.__bangumiUpdatedAtInit = true;
+        document.addEventListener("swup:contentReplaced", fillBangumiUpdatedAt);
+        document.addEventListener("swup:content:replace", fillBangumiUpdatedAt);
+        document.addEventListener("swup:page:view", fillBangumiUpdatedAt);
+        if (window.swup && window.swup.hooks) {
+          window.swup.hooks.on("content:replace", fillBangumiUpdatedAt);
+          window.swup.hooks.on("page:view", fillBangumiUpdatedAt);
+        } else {
+          document.addEventListener("swup:enable", function () {
+            if (window.swup && window.swup.hooks) {
+              window.swup.hooks.on("content:replace", fillBangumiUpdatedAt);
+              window.swup.hooks.on("page:view", fillBangumiUpdatedAt);
+            }
+          });
+        }
+      }
+    })();
+  </script>
+)}
 
 <style>
   /* 自定义样式 */

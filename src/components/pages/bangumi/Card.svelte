@@ -16,7 +16,7 @@ interface Props {
 const {
 	item,
 	loadImage = false,
-	subjectBaseUrl = "https://bangumi.one/subject/",
+	subjectBaseUrl = "https://bgm.tv/subject/",
 	nsfw = "off",
 }: Props = $props();
 
