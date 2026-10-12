@@ -191,6 +191,10 @@ function restoreTabFromHash() {
 	}
 }
 
+// 只挂载当前激活的 section：非激活 tab 不再渲染 24 张卡片，
+// 减少常驻 DOM 与 GPU 层数（收藏页滚动掉帧优化）
+const visibleTab = $derived(activeTab || tabs[0]?.id || "");
+
 onMount(async () => {
 	restoreTabFromHash();
 	if (isDynamic) {
@@ -213,13 +217,15 @@ onMount(async () => {
   <TabNav {tabs} {activeTab} onTabChange={handleTabChange} />
 
   {#each tabs as tab (tab.id)}
-    <BangumiSection
-      sectionId={tab.id}
-      items={bangumiData[tab.id] || []}
-      isActive={tab.id === activeTab}
-      itemsPerPage={24}
-      {subjectBaseUrl}
-      nsfw={nsfwMode}
-    />
+    {#if tab.id === visibleTab}
+      <BangumiSection
+        sectionId={tab.id}
+        items={bangumiData[tab.id] || []}
+        isActive={true}
+        itemsPerPage={24}
+        {subjectBaseUrl}
+        nsfw={nsfwMode}
+      />
+    {/if}
   {/each}
 {/if}

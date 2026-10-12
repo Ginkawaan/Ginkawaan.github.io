@@ -117,7 +117,7 @@ function handleError(e: Event) {
   href="{subjectBaseUrl}{item.subject?.id}"
   target="_blank"
   rel="noopener noreferrer nofollow"
-  class="group relative overflow-hidden rounded-xl transition-all duration-300 hover:shadow-lg hover:scale-[1.02] block"
+  class="group relative overflow-hidden rounded-xl transition-[transform,box-shadow] duration-300 hover:shadow-lg hover:scale-[1.02] block"
 >
   <div class="aspect-2/3 relative overflow-hidden">
     {#if initialSrc}
@@ -126,7 +126,7 @@ function handleError(e: Event) {
         src={loadImage ? initialSrc : undefined}
         data-src={loadImage ? undefined : initialSrc}
         alt={title}
-        class="w-full h-full object-cover pointer-events-none opacity-0 transition-all duration-500 ease-out group-hover:scale-105"
+        class="w-full h-full object-cover pointer-events-none opacity-0 transition-[opacity,transform] duration-500 ease-out group-hover:scale-105"
         style={imageNsfw ? "filter: blur(20px)" : undefined}
         loading="lazy"
         decoding="async"
@@ -146,7 +146,7 @@ function handleError(e: Event) {
 
     <!-- Score badge -->
     {#if score}
-      <div class="absolute top-2 right-2 px-2 py-1 rounded-full text-xs text-white font-medium bg-black/50 backdrop-blur-sm flex items-center gap-1">
+      <div class="absolute top-2 right-2 px-2 py-1 rounded-full text-xs text-white font-medium bg-black/60 flex items-center gap-1">
         <span class="text-yellow-400">⭐</span>
         {score}
       </div>
@@ -155,7 +155,7 @@ function handleError(e: Event) {
     <!-- Gradient overlay + info -->
     <div class="absolute inset-0 bg-linear-to-t from-black/70 via-black/20 to-transparent"></div>
     <div class="absolute bottom-0 left-0 right-0 p-3">
-      <h3 class="font-bold text-sm text-white line-clamp-2 drop-shadow-lg">{title}</h3>
+      <h3 class="font-bold text-sm text-white line-clamp-2" style="text-shadow: 0 1px 3px rgba(0,0,0,0.75)">{title}</h3>
       {#if year}
         <p class="text-xs text-white/60 mt-1">{year}</p>
       {/if}
@@ -165,10 +165,10 @@ function handleError(e: Event) {
       {#if visibleTags.length > 0}
         <div class="flex flex-wrap gap-1 mt-1.5">
           {#each visibleTags as tag}
-            <span class="text-[0.6rem] px-1.5 py-0.5 rounded bg-white/20 text-white/90 backdrop-blur-sm">{tag}</span>
+            <span class="text-[0.6rem] px-1.5 py-0.5 rounded bg-white/25 text-white/90">{tag}</span>
           {/each}
           {#if hiddenTagCount > 0}
-            <span class="text-[0.6rem] px-1.5 py-0.5 rounded bg-white/20 text-white/60 backdrop-blur-sm">+{hiddenTagCount}</span>
+            <span class="text-[0.6rem] px-1.5 py-0.5 rounded bg-white/25 text-white/60">+{hiddenTagCount}</span>
           {/if}
         </div>
       {/if}
