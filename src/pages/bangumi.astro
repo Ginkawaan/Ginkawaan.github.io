@@ -310,7 +310,7 @@ const activeTab = tabs[0]?.id || "anime";
 
 {
   /* dynamic 模式下，用客户端时间填充"数据更新日期"（数据是实时拉取的）
-     注意：本站启用了 swup，站内切页时只会替换 DOM、不会重新执行 <script>，
+     注意：本站启用了 swup，站内切页时只会替换 DOM、不会重新执行 script 标签，
      所以必须把填充逻辑注册到 swup 生命周期（page:view / content:replace）上，
      否则从其它页面点进来会永远停在"加载中…"。静态模式下时间已在服务端渲染好，无需处理。 */
 }
