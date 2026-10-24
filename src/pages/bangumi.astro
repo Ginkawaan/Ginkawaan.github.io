@@ -76,21 +76,15 @@ async function fetchBangumiData(username: string, subjectType: number) {
 	let allData: UserSubjectCollection[] = [];
 	let hasMore = true;
 
-	// 开发模式下只获取一页数据，加快调试速度
+	// 开发模式与生产保持一致：都取全量（由 maxTotal 兜底）
+	// 原先开发模式只取 1 页（50 条），导致本地预览的计数与线上不一致
 	const isDev = import.meta.env.DEV;
-	const maxPages = isDev ? 1 : 0; // 0 表示不限制
 
 	console.log(
 		`[Bangumi] ${isDev ? "🔧 Dev mode" : "🌐 Prod mode"} - fetching subjectType ${subjectType} data for user ${username}...`,
 	);
 
 	while (hasMore) {
-		// 开发模式限制：只获取一页
-		if (isDev && maxPages > 0 && allData.length >= limit * maxPages) {
-			console.log(`[Bangumi] Dev mode: fetched ${maxPages} page(s), stopping`);
-			break;
-		}
-
 		// 检查是否超过最大获取限制
 		if (maxTotal > 0 && allData.length >= maxTotal) {
 			console.log(`[Bangumi] Reached max fetch limit ${maxTotal}, stopping`);
