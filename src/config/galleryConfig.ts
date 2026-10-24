@@ -8,6 +8,8 @@ export const galleryConfig: GalleryConfig = {
 		{
 			id: "records",
 			name: "记录",
+			// 列表页缩略图用这张（209 KB）；不指定则自动取第一张（01.webp 1823 KB，偏重）
+			cover: "/gallery/records/13.jpg",
 		},
 	],
 
