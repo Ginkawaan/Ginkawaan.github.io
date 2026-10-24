@@ -81,24 +81,17 @@ const score = $derived(item.subject?.score || 0);
 // NSFW 封面模糊：mode === "blur" 且命中时模糊封面
 const imageNsfw = $derived(nsfw === "blur" && isBangumiNsfw(item));
 
-// SSR 阶段用第一个 URL，客户端挂载后跳过已知失败的 URL
-let initialSrc = $state("");
+// 首屏即用第一个 URL 渲染（SSR 也输出真实 src，避免先出占位符再刷图）
+let initialSrc = $state(coverFallbacks[0] || "");
 
+// 客户端挂载后跳过本地记录过的失败 URL
 $effect(() => {
+	if (typeof window === "undefined") return;
 	const srcs = coverFallbacks;
-	initialSrc = srcs[0] || "";
-	if (typeof window === "undefined" || srcs.length === 0) return;
 	const failed = getFailedCovers(FAILED_COVERS_KEY);
 	const firstGood = srcs.find((url) => !failed.has(url));
-	if (firstGood) initialSrc = firstGood;
+	initialSrc = firstGood ?? "";
 });
-
-function handleLoad(e: Event) {
-	const img = e.currentTarget as HTMLImageElement;
-	img.style.opacity = "1";
-	const ph = img.parentElement?.querySelector(".lqip-placeholder");
-	if (ph) ph.classList.add("loaded");
-}
 
 function handleError(e: Event) {
 	const img = e.currentTarget as HTMLImageElement;
@@ -126,17 +119,14 @@ function handleError(e: Event) {
         src={loadImage ? initialSrc : undefined}
         data-src={loadImage ? undefined : initialSrc}
         alt={title}
-        class="w-full h-full object-cover pointer-events-none opacity-0 transition-[opacity,transform] duration-500 ease-out group-hover:scale-105"
+        class="relative z-0 w-full h-full object-cover pointer-events-none transition-transform duration-500 ease-out group-hover:scale-105"
         style={imageNsfw ? "filter: blur(20px)" : undefined}
         loading="lazy"
         decoding="async"
-        onload={handleLoad}
         onerror={handleError}
       />
     {:else}
-      <div class="w-full h-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center">
-        <div class="text-gray-400 text-4xl">📖</div>
-      </div>
+      <div class="w-full h-full bg-(--btn-regular-bg)"></div>
     {/if}
 
     <!-- Status badge -->

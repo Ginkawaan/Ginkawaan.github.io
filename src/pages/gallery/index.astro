@@ -44,40 +44,26 @@ const allTags = [...new Set(albums.flatMap((a) => a.tags || []))].sort();
         </div>
       </div>
 
-      <!-- 搜索框 + 标签筛选 -->
-      {albums.length > 0 && (
+      <!-- 标签筛选（仅在配置了 tags 时显示；搜索框已移除） -->
+      {albums.length > 0 && allTags.length > 0 && (
         <gallery-filter class="mb-6">
-          <div class="relative mb-3">
-            <Icon
-              name="material-symbols:search"
-              class="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400 dark:text-neutral-500 text-lg pointer-events-none"
-            />
-            <input
-              type="text"
-              data-search
-              placeholder={i18n(I18nKey.searchAlbums)}
-              class="w-full pl-10 pr-4 py-2.5 rounded-xl border border-(--line-divider) bg-transparent text-neutral-900 dark:text-neutral-100 placeholder-neutral-400 dark:placeholder-neutral-500 focus:border-(--primary) focus:ring-1 focus:ring-(--primary) outline-none transition-all duration-200 text-sm"
-            />
-          </div>
-          {allTags.length > 0 && (
-            <div class="flex flex-wrap gap-2">
+          <div class="flex flex-wrap gap-2">
+            <button
+              data-tag="all"
+              class="category-pill px-3 py-1.5 rounded-full text-sm font-medium transition-colors duration-200"
+              data-active
+            >
+              {i18n(I18nKey.all)}
+            </button>
+            {allTags.map((tag) => (
               <button
-                data-tag="all"
+                data-tag={tag}
                 class="category-pill px-3 py-1.5 rounded-full text-sm font-medium transition-colors duration-200"
-                data-active
               >
-                {i18n(I18nKey.all)}
+                {tag}
               </button>
-              {allTags.map((tag) => (
-                <button
-                  data-tag={tag}
-                  class="category-pill px-3 py-1.5 rounded-full text-sm font-medium transition-colors duration-200"
-                >
-                  {tag}
-                </button>
-              ))}
-            </div>
-          )}
+            ))}
+          </div>
         </gallery-filter>
       )}
     </div>
