@@ -262,9 +262,10 @@ export const siteConfig: SiteConfig = {
 		// Bangumi用户ID（bgm.tv 的用户 ID，纯数字；填用户名可能查不到）
 		userId: "907285",
 		// 数据模式：static=构建时获取，dynamic=客户端实时获取
-		// static 模式在构建时获取数据并静态渲染，部署后数据不更新
-		// dynamic 模式在浏览器中实时请求 API，始终显示最新数据
-		mode: "dynamic",
+		// static：构建时抓取数据并静态渲染进 HTML —— 打开即显示，无骨架屏/无"加载中"
+		//         数据靠 .github/workflows/deploy.yml 的定时任务（cron）周期性重建来更新
+		// dynamic：浏览器实时请求 API，始终最新，但每次打开都要等请求返回
+		mode: "static",
 		// Bangumi API 地址（第三方镜像，国内可直连）
 		// 已实测：api.bangumi.pro / api.bgm.tv 国内直连不通（ECONNRESET）
 		//        bgmapi.anibt.net 可直连，约 2s 响应

@@ -4,6 +4,10 @@ on:
   push:
     branches: [ master ]
   workflow_dispatch:
+  # 定时重建：让静态抓取的数据（收藏页等）按时间自动更新
+  # 每 6 小时一次（UTC）：00:00 / 06:00 / 12:00 / 18:00 → 北京时间 08:00 / 14:00 / 20:00 / 02:00
+  schedule:
+    - cron: '0 0,6,12,18 * * *'
 
 # Pages 部署需要的权限
 permissions:
