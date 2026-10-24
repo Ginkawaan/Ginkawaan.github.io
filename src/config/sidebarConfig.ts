@@ -245,8 +245,8 @@ export const sidebarLayoutConfig: SidebarLayoutConfig = {
 		{
 			// 组件类型：公告组件
 			type: "announcement",
-			// 是否启用该组件
-			enable: true,
+			// 是否启用该组件（移动端不显示公告，让文章优先）
+			enable: false,
 			// 是否在文章详情页显示
 			showOnPostPage: true,
 		},
@@ -279,8 +279,8 @@ export const sidebarLayoutConfig: SidebarLayoutConfig = {
 		{
 			// 组件类型：最新动态组件
 			type: "dynamic",
-			// 是否启用该组件
-			enable: true,
+			// 是否启用该组件（移动端不显示：暂无动态内容，空块影响观感）
+			enable: false,
 			// 是否在文章详情页显示
 			showOnPostPage: true,
 			// 组件专属配置
@@ -294,8 +294,8 @@ export const sidebarLayoutConfig: SidebarLayoutConfig = {
 		{
 			// 组件类型：站点统计组件
 			type: "stats",
-			// 是否启用该组件
-			enable: true,
+			// 是否启用该组件（移动端不显示，精简首屏）
+			enable: false,
 			// 是否在文章详情页显示
 			showOnPostPage: true,
 		},
