@@ -38,7 +38,11 @@ const darkTheme = "dark";
     widget.setAttribute("term", requestedPath);
   }
 
-  import("https://esm.sh/giscus");
+  // 直接引打包好的 giscus 主模块：
+  // esm.sh 的入口 /giscus 只是一层 bare specifier 转发（export * from "/giscus@1.6.0/es2022/giscus.mjs"），
+  // 浏览器无法解析这种无协议头的裸路径。虽然 import() 的失败是静默的，但不同浏览器/网关
+  // 对它的处理不一致，直链更稳。
+  import("https://esm.sh/giscus@1.6.0/es2022/giscus.mjs");
 
   function updateGiscusTheme() {
     const isDark = document.documentElement.classList.contains('dark');
