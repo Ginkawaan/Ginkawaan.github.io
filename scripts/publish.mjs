@@ -8,6 +8,7 @@
  *
  *   --no-build  跳过构建验证（快，但语法错要等线上 Actions 报错才知道）
  *   --dry-run   只检查不提交
+ *   --no-amend  每次都新建提交（默认会把「只改已有文章」的改动并进上一条提交）
  */
 
 import { execFileSync, execSync } from "node:child_process";
@@ -26,6 +27,7 @@ const SITE = "https://ginkawaan.github.io";
 const argv = process.argv.slice(2);
 const NO_BUILD = argv.includes("--no-build");
 const DRY_RUN = argv.includes("--dry-run");
+const NO_AMEND = argv.includes("--no-amend");
 
 // ── 输出工具 ────────────────────────────────────────────────
 const line = (n = 1) => console.log("\n".repeat(n - 1) + "─".repeat(52));
@@ -245,22 +247,80 @@ if (DRY_RUN) {
 	process.exit(0);
 }
 
-git(["add", "-A"]);
-const message = buildMessage(addedInfo, modified, removed, others);
-git(["commit", "-m", message], { stdio: "pipe" });
-ok(message);
-
-// 推送
-step(++stepNo, TOTAL, "推送");
+// 先同步远程信息，用于判断要不要 rebase、以及 amend 后是否需要 force
 try {
 	git(["fetch", "origin", BRANCH], { stdio: "pipe" });
+} catch {
+	note("fetch 失败（网络？），按本地状态继续");
+}
+
+try {
 	const behind = Number(git(["rev-list", "--count", `HEAD..origin/${BRANCH}`]).trim());
 	if (behind > 0) {
 		note(`远程多了 ${behind} 个提交，先 rebase`);
 		git(["pull", "--rebase", "origin", BRANCH], { stdio: "pipe" });
 	}
+} catch {
+	note("rebase 失败，跳过（可能导致推送被拒）");
+}
+
+// 反复改同一篇时，把改动并进上一条提交，避免历史里堆一串「新增」
+const headBefore = git(["rev-parse", "HEAD"]).trim();
+let originHead = "";
+try {
+	originHead = git(["rev-parse", `origin/${BRANCH}`]).trim();
+} catch {
+	originHead = "";
+}
+const alreadyPushed = originHead !== "" && headBefore === originHead;
+
+function canAmend() {
+	if (NO_AMEND) return false;
+	if (addedInfo.length > 0) return false; // 有新文章就正常提交
+	if (others.length > 0) return false; // 有非文章改动也正常提交
+	if (modified.length === 0) return false;
+
+	let lastMsg = "";
+	try {
+		lastMsg = git(["log", "-1", "--pretty=%s"]).trim();
+	} catch {
+		return false;
+	}
+	// 只合并本脚本生成的提交，别把手工提交吞掉
+	if (!/^(feat|docs|chore)\(post\):/.test(lastMsg)) return false;
+
+	const lastFiles = git(["show", "--name-only", "--pretty=format:", "HEAD"])
+		.split("\n")
+		.map((s) => s.trim())
+		.filter(Boolean);
+	return modified.every((f) => lastFiles.includes(f));
+}
+
+git(["add", "-A"]);
+
+let amended = false;
+if (canAmend()) {
+	git(["commit", "--amend", "--no-edit"], { stdio: "pipe" });
+	const kept = git(["log", "-1", "--pretty=%s"]).trim();
+	ok(`并入上一条提交：${kept}`);
+	amended = true;
+} else {
+	const message = buildMessage(addedInfo, modified, removed, others);
+	git(["commit", "-m", message], { stdio: "pipe" });
+	ok(message);
+}
+
+// 推送
+step(++stepNo, TOTAL, "推送");
+try {
+	const pushArgs = ["push", "origin", BRANCH];
+	// amend 改写了已推送的历史，只能 force；--force-with-lease 会在远程有新提交时拒绝
+	if (amended && alreadyPushed) {
+		pushArgs.push("--force-with-lease");
+		note("已推送过的提交被改写，用 force-with-lease 覆盖");
+	}
 	// 用 pipe 收住 git 自己的输出：stdout 被重定向时 inherit 会让顺序乱掉
-	git(["push", "origin", BRANCH], { stdio: "pipe" });
+	git(pushArgs, { stdio: "pipe" });
 	ok("推送完成");
 } catch (e) {
 	bad("推送失败");
