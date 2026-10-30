@@ -109,7 +109,9 @@ function validatePost(rel) {
 		notes.push("文件名含空格，URL 里会变成 %20，建议用 - 或 _");
 	}
 	if (/[A-Z]/.test(base)) {
-		notes.push("文件名含大写字母，Astro 会转成小写，URL 是 " + base.toLowerCase());
+		notes.push(
+			`文件名含大写字母，Astro 会转成小写，URL 是 ${base.toLowerCase()}`,
+		);
 	}
 	if (info.draft) notes.push("draft: true —— 本地能看到，线上不会发布");
 
@@ -125,7 +127,8 @@ function buildMessage(added, modified, removed, others) {
 		return `chore: 更新 ${names.join("、")}${tail}`;
 	}
 
-	const titleOf = (p) => (typeof p === "string" ? path.basename(p, ".md") : p?.title ?? "");
+	const titleOf = (p) =>
+		typeof p === "string" ? path.basename(p, ".md") : (p?.title ?? "");
 	const first = titleOf(added[0] ?? modified[0] ?? "");
 	if (added.length === 1 && modified.length === 0 && removed.length === 0) {
 		return `feat(post): 新增《${first}》`;
@@ -150,7 +153,7 @@ const TOTAL = NO_BUILD ? 4 : 5;
 let stepNo = 0;
 
 line();
-log("  博客一键发布" + (DRY_RUN ? "（演练模式，不会提交）" : ""));
+log(`  博客一键发布${DRY_RUN ? "（演练模式，不会提交）" : ""}`);
 line();
 
 step(++stepNo, TOTAL, "检查改动");
@@ -177,7 +180,10 @@ for (const c of changes) {
 	else modified.push(c.path);
 }
 
-if (added.length + modified.length + removed.length === 0 && others.length === 0) {
+if (
+	added.length + modified.length + removed.length === 0 &&
+	others.length === 0
+) {
 	ok("没有文章改动");
 	line();
 	process.exit(0);
@@ -185,7 +191,7 @@ if (added.length + modified.length + removed.length === 0 && others.length === 0
 
 log(
 	`  文章：新增 ${added.length} / 修改 ${modified.length} / 删除 ${removed.length}` +
-		(others.length ? `　其他文件：${others.length}` : "")
+		(others.length ? `　其他文件：${others.length}` : ""),
 );
 
 step(++stepNo, TOTAL, "校验文章");
@@ -231,7 +237,7 @@ if (!NO_BUILD) {
 				.filter((l) => l.trim())
 				.slice(-25)
 				.map((l) => `  ${l}`)
-				.join("\n")
+				.join("\n"),
 		);
 		line();
 		process.exit(1);
@@ -255,7 +261,9 @@ try {
 }
 
 try {
-	const behind = Number(git(["rev-list", "--count", `HEAD..origin/${BRANCH}`]).trim());
+	const behind = Number(
+		git(["rev-list", "--count", `HEAD..origin/${BRANCH}`]).trim(),
+	);
 	if (behind > 0) {
 		note(`远程多了 ${behind} 个提交，先 rebase`);
 		git(["pull", "--rebase", "origin", BRANCH], { stdio: "pipe" });
