@@ -6,8 +6,13 @@ if (!commentConfig?.giscus) {
 }
 
 const giscus = commentConfig.giscus;
-const lightTheme = "light";
-const darkTheme = "dark";
+
+// 自定义主题：去掉「预览」标签和底部署名，圆角对齐站点卡片。
+// 必须是完整 URL —— iframe 来自 giscus.app，相对路径会被解析到它的域下。
+// dev 环境用官方内置主题（http 的 localhost 会被混合内容策略拦掉）。
+const siteUrl = (import.meta.env.SITE || "https://ginkawaan.github.io").replace(/\/$/, "");
+const lightTheme = import.meta.env.DEV ? "light" : `${siteUrl}/giscus/light.css`;
+const darkTheme = import.meta.env.DEV ? "dark" : `${siteUrl}/giscus/dark.css`;
 ---
 
 <!-- 
