@@ -11,8 +11,10 @@ const giscus = commentConfig.giscus;
 // 必须是完整 URL —— iframe 来自 giscus.app，相对路径会被解析到它的域下。
 // dev 环境用官方内置主题（http 的 localhost 会被混合内容策略拦掉）。
 const siteUrl = (import.meta.env.SITE || "https://ginkawaan.github.io").replace(/\/$/, "");
-const lightTheme = import.meta.env.DEV ? "light" : `${siteUrl}/giscus/light.css`;
-const darkTheme = import.meta.env.DEV ? "dark" : `${siteUrl}/giscus/dark.css`;
+// 改样式时递增，绕开 iframe 对主题 CSS 的缓存
+const THEME_VER = "2";
+const lightTheme = import.meta.env.DEV ? "light" : `${siteUrl}/giscus/light.css?v=${THEME_VER}`;
+const darkTheme = import.meta.env.DEV ? "dark" : `${siteUrl}/giscus/dark.css?v=${THEME_VER}`;
 ---
 
 <!-- 

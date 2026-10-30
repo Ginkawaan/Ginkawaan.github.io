@@ -5,23 +5,48 @@
 
   /*! Extensions from @primer/css/alerts/flash.scss */--color-social-reaction-bg-hover:var(--color-scale-gray-1);--color-social-reaction-bg-reacted-hover:var(--color-scale-blue-1)}main .pagination-loader-container{background-image:url(https://github.com/images/modules/pulls/progressive-disclosure-line.svg)}main .gsc-loading-image{background-image:url(https://github.githubassets.com/images/mona-loading-default.gif)}
 
-/* ── 自定义覆盖 ────────────────────────────────────────
-   1. 隐藏评论框的「预览」标签：访客基本只写纯文本，
-      Markdown 预览对他们没有意义，去掉更干净。
-   2. 隐藏底部 "Powered by giscus"。
-   3. 卡片圆角与站点卡片风格对齐。
-   ───────────────────────────────────────────────────── */
+/* ══════════════════════════════════════════════════════
+   自定义覆盖 —— 与站点视觉统一，去掉冗余控件
+   ══════════════════════════════════════════════════════ */
 
+/* 1. 隐藏「预览」标签：访客基本只写纯文本，Markdown 预览多余 */
 .gsc-comment-box-tabs {
 	display: none !important;
 }
 
+/* 2. 隐藏底部 "Powered by giscus" */
 .gsc-comments-footer,
 a[href^="https://giscus.app"] {
 	display: none !important;
 }
 
+/* 3. 字体跟随站点 */
+main {
+	font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI",
+		"PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+}
+
+/* 4. 卡片圆角与站点对齐 */
 .gsc-comment-box,
 .gsc-comment {
 	border-radius: 12px !important;
+}
+
+/* 5. 评论输入框给足高度，长评不用边写边滚 */
+.gsc-comment-box textarea {
+	min-height: 96px !important;
+}
+
+/* 6. 主色对齐站点 --primary（hue 165 青绿） */
+main {
+	--color-accent-fg: oklch(0.52 0.11 165);
+	--color-accent-emphasis: oklch(0.62 0.13 165);
+	--color-btn-primary-bg: oklch(0.62 0.13 165);
+	--color-btn-primary-hover-bg: oklch(0.57 0.13 165);
+	--color-btn-primary-selected-bg: oklch(0.53 0.13 165);
+	--color-btn-primary-border: transparent;
+	--color-btn-primary-shadow: none;
+	--color-btn-primary-inset-shadow: none;
+	--color-border-default: #e8ebed;
+	--color-border-muted: #f0f2f4;
 }
