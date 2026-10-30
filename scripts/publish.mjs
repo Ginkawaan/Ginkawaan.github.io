@@ -257,9 +257,10 @@ try {
 	const behind = Number(git(["rev-list", "--count", `HEAD..origin/${BRANCH}`]).trim());
 	if (behind > 0) {
 		note(`远程多了 ${behind} 个提交，先 rebase`);
-		git(["pull", "--rebase", "origin", BRANCH], { stdio: "inherit" });
+		git(["pull", "--rebase", "origin", BRANCH], { stdio: "pipe" });
 	}
-	git(["push", "origin", BRANCH], { stdio: "inherit" });
+	// 用 pipe 收住 git 自己的输出：stdout 被重定向时 inherit 会让顺序乱掉
+	git(["push", "origin", BRANCH], { stdio: "pipe" });
 	ok("推送完成");
 } catch (e) {
 	bad("推送失败");
