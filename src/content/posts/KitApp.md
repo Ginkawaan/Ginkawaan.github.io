@@ -23,8 +23,8 @@ draft: false
 
 - [Clash Verge](https://github.com/clash-verge-rev/clash-verge-rev) / 网络代理工具
 - [Firefox](https://www.firefox.com/zh-CN/download/all/desktop-release/) / 浏览器
+  - [流畅阅读](https://fluent.thinkstu.com/) / 网页翻译
   - [青柠起始页](https://intro.limestart.cn/) / 精简主页
-  - [沉浸式翻译](https://immersivetranslate.com/) / 网页翻译
   - [uBlock Origin](https://github.com/gorhill/uBlock#ublock-origin) / 广告拦截
   - [SessionsRestore](https://addons.mozilla.org/zh-CN/firefox/addon/%E6%81%A2%E5%A4%8D%E6%A0%87%E7%AD%BE%E9%A1%B5/) / 恢复关闭的标签页
   - [QuickDrag WE](https://addons.mozilla.org/zh-CN/firefox/addon/quickdrag-we/) / 拖动保存图像或查询文本
