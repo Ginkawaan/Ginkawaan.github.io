@@ -229,7 +229,7 @@ export const siteConfig: SiteConfig = {
 		// 文章过期阈值（天数），超过此天数才显示"上次编辑"卡片
 		outdatedThreshold: 30,
 		// 是否显示文章页的分享按钮
-		share: true,
+		share: false,
 		// 是否显示上一篇/下一篇文章导航
 		postNavigation: true,
 		// 是否显示相关文章推荐
