@@ -311,15 +311,22 @@ if (problems.length) {
 ok("全部通过");
 
 // 构建验证
+// 先跑 astro check：`astro build` 不做类型检查，漏掉的类型错会等到 CI 才红
 if (!NO_BUILD) {
-	step(++stepNo, TOTAL, "构建验证（约 20~60 秒）");
+	step(++stepNo, TOTAL, "检查与构建（约 30~90 秒）");
 	try {
+		execSync("npx astro check", {
+			cwd: ROOT,
+			stdio: "pipe",
+			encoding: "utf8",
+		});
+		ok("类型检查通过");
 		execSync("npx astro build", { cwd: ROOT, stdio: "pipe", encoding: "utf8" });
 		ok("构建通过");
 	} catch (e) {
-		bad("构建失败，已中止（没有提交、没有推送）");
+		bad("检查/构建失败，已中止（没有提交、没有推送）");
 		const out = `${e.stdout ?? ""}\n${e.stderr ?? ""}`;
-		log("\n  ── 构建输出（末尾） ──");
+		log("\n  ── 输出（末尾） ──");
 		log(
 			out
 				.split("\n")
