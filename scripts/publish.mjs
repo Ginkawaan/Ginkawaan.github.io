@@ -231,19 +231,29 @@ if (changes.length === 0) {
 }
 
 const isPost = (p) => p.startsWith(`${POSTS_DIR}/`) && p.endsWith(".md");
+// 文章配图：跟文章一起提交，不单独占一条 chore(assets)
+const POST_ASSETS = "src/assets/images/posts/";
 const added = [];
 const modified = [];
 const removed = [];
+const assets = [];
 const others = [];
 
 for (const c of changes) {
 	if (!isPost(c.path)) {
-		others.push(c);
+		if (c.path.startsWith(POST_ASSETS)) assets.push(c);
+		else others.push(c);
 		continue;
 	}
 	if (c.code === "??" || c.code === "A " || c.code === " A") added.push(c.path);
 	else if (c.code.includes("D")) removed.push(c.path);
 	else modified.push(c.path);
+}
+
+// 只换了图、没改文章：当作普通改动处理，避免生成空 message
+if (assets.length > 0 && added.length + modified.length + removed.length === 0) {
+	others.push(...assets);
+	assets.length = 0;
 }
 
 if (
@@ -257,6 +267,7 @@ if (
 
 log(
 	`  文章：新增 ${added.length} / 修改 ${modified.length} / 删除 ${removed.length}` +
+		(assets.length ? `　配图：${assets.length}` : "") +
 		(others.length ? `　其他文件：${others.length}` : ""),
 );
 
@@ -378,7 +389,13 @@ function canAmend() {
 }
 
 // 文章与其它文件分成两条提交，各自的 message 才说得清自己改了什么
-const postChanges = [...added, ...modified, ...removed];
+// 配图属于文章的一部分，跟文章放同一条提交
+const postChanges = [
+	...added,
+	...modified,
+	...removed,
+	...assets.map((a) => a.path),
+];
 
 function showCommit(msg, files) {
 	ok(msg);
