@@ -119,6 +119,32 @@ function validatePost(rel) {
 	}
 	if (info.draft) notes.push("draft: true —— 本地能看到，线上不会发布");
 
+	// ── 图片引用检查 ──────────────────────────────────────
+	// 1. Obsidian 的 ![[xxx.png]] 语法 Astro 不认，会原样输出成文字
+	const body = parsed.content;
+	const assetDir = `src/assets/images/posts/${base.toLowerCase()}`;
+	// 正文在 src/content/posts/ 下，往上是两层才到 src/
+	const relDir = `../../assets/images/posts/${base.toLowerCase()}`;
+	for (const m of body.matchAll(/!\[\[([^\]\n]+)\]\]/g)) {
+		const lineNo = body.slice(0, m.index).split("\n").length;
+		problems.push(
+			`第 ${lineNo} 行用了 Obsidian 的 ![[${m[1]}]] 图片语法，Astro 不认（会原样显示成文字）。` +
+				`正确写法：图片放到 ${assetDir}/，正文写 ![](${relDir}/文件名)`,
+		);
+	}
+
+	// 2. 相对路径的图片必须真实存在，否则线上是裂图
+	for (const m of body.matchAll(/!\[[^\]\n]*\]\(([^)\s]+)\)/g)) {
+		const src = m[1];
+		if (/^(?:https?:)?\/\//i.test(src) || src.startsWith("/")) continue;
+		if (src.startsWith("data:")) continue;
+		const target = path.resolve(path.dirname(abs), src);
+		if (!fs.existsSync(target)) {
+			const lineNo = body.slice(0, m.index).split("\n").length;
+			problems.push(`第 ${lineNo} 行引用的图片不存在：${src}`);
+		}
+	}
+
 	return { ...info, problems, notes };
 }
 
@@ -178,7 +204,11 @@ function buildOthersMessage(others) {
 // 读 HEAD 里的版本，判断 draft 有没有被改（改了就意味着文章上线/下线）
 function previousDraft(rel) {
 	try {
-		return matter(git(["show", `HEAD:${rel}`])).data?.draft === true;
+		// 新文件在 HEAD 里没有，git 会往 stderr 打一行 fatal，这里静音掉
+		const raw = git(["show", `HEAD:${rel}`], {
+			stdio: ["ignore", "pipe", "ignore"],
+		});
+		return matter(raw).data?.draft === true;
 	} catch {
 		return null; // 新文件
 	}
