@@ -226,8 +226,21 @@ const activeTab = tabs[0]?.id || "anime";
                     </div>
                     <p class="page-updated">
                         <span>{i18n(I18nKey.bangumiLastUpdated)}</span>
-                        <span id="bangumi-updated-at">
-                          {isDynamic ? "加载中…" : buildTime}
+                        <span class="page-updated-row">
+                          <span id="bangumi-updated-at">
+                            {isDynamic ? "加载中…" : buildTime}
+                          </span>
+                          {isUserIdConfigured && !fetchFailed && (
+                            <button
+                              id="bangumi-refresh"
+                              type="button"
+                              class="bangumi-refresh"
+                              title="从 Bangumi 拉取最新收藏"
+                              aria-label="刷新收藏数据"
+                            >
+                              <Icon name="material-symbols:refresh-rounded" />
+                            </button>
+                          )}
                         </span>
                     </p>
                 </div>
@@ -280,7 +293,14 @@ const activeTab = tabs[0]?.id || "anime";
         </div>
       ) : tabs.length > 0 ? (
         <>
-          <BangumiGrid client:load tabs={tabs} initialActiveTab={activeTab} bangumiData={bangumiData} subjectBaseUrl={bangumiConfig.subjectBaseUrl} nsfw={bangumiConfig.nsfw} />
+          <BangumiGrid client:load tabs={tabs} initialActiveTab={activeTab} bangumiData={bangumiData} subjectBaseUrl={bangumiConfig.subjectBaseUrl} nsfw={bangumiConfig.nsfw} fetchConfig={{
+            username: bangumiConfig.username!,
+            apiUrl: bangumiConfig.apiUrl,
+            categories: bangumiConfig.categories,
+            categoryOrder: siteConfig.bangumi?.categoryOrder || [],
+            pagination: bangumiConfig.pagination,
+            nsfw: bangumiConfig.nsfw,
+          }} />
         </>
       ) : (
         <div class="text-center py-16">
@@ -351,6 +371,48 @@ const activeTab = tabs[0]?.id || "anime";
   </script>
 )}
 
+{
+  /* 手动刷新按钮：点击后由 BangumiGrid 组件去 API 拉最新数据。
+     用 document 上的事件委托，swup 换页后新按钮无需重新绑定。 */
+}
+<script is:inline>
+  (function () {
+    if (window.__bangumiRefreshInit) return;
+    window.__bangumiRefreshInit = true;
+
+    var TIMEOUT = 25000;
+
+    function reset(btn) {
+      if (!btn) return;
+      btn.classList.remove("is-loading");
+      btn.disabled = false;
+      btn.removeAttribute("aria-busy");
+    }
+
+    document.addEventListener("click", function (e) {
+      var btn = e.target && e.target.closest ? e.target.closest("#bangumi-refresh") : null;
+      if (!btn) return;
+      e.preventDefault();
+      if (btn.disabled) return;
+
+      btn.classList.add("is-loading");
+      btn.disabled = true;
+      btn.setAttribute("aria-busy", "true");
+
+      // 兜底：请求卡住或组件没挂载时，25 秒后自己恢复，不会一直转
+      setTimeout(function () {
+        reset(btn);
+      }, TIMEOUT);
+
+      document.dispatchEvent(new CustomEvent("bangumi:refresh"));
+    });
+
+    document.addEventListener("bangumi:refreshed", function () {
+      reset(document.getElementById("bangumi-refresh"));
+    });
+  })();
+</script>
+
 <style>
   /* 自定义样式 */
   .line-clamp-2 {
@@ -358,5 +420,52 @@ const activeTab = tabs[0]?.id || "anime";
     -webkit-line-clamp: 2;
     -webkit-box-orient: vertical;
     overflow: hidden;
+  }
+
+  /* "数据更新于" 那一行：日期 + 刷新按钮并排 */
+  .page-heading .page-updated .page-updated-row {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 0.25rem;
+  }
+
+  .bangumi-refresh {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.5rem;
+    height: 1.5rem;
+    padding: 0;
+    border: none;
+    border-radius: 9999px;
+    background: transparent;
+    color: var(--content-meta);
+    cursor: pointer;
+    transition: background-color 0.2s ease, color 0.2s ease;
+  }
+
+  .bangumi-refresh:hover {
+    background: var(--btn-regular-bg);
+    color: var(--btn-content);
+  }
+
+  .bangumi-refresh:disabled {
+    cursor: progress;
+  }
+
+  .bangumi-refresh svg {
+    width: 0.95rem;
+    height: 0.95rem;
+  }
+
+  .bangumi-refresh.is-loading svg {
+    animation: bangumi-spin 0.9s linear infinite;
+  }
+
+  @keyframes bangumi-spin {
+    to {
+      transform: rotate(360deg);
+    }
   }
 </style>

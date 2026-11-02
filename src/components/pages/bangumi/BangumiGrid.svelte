@@ -38,7 +38,7 @@ const {
 
 const nsfwMode = $derived(nsfw ?? fetchConfig?.nsfw ?? "off");
 
-const isDynamic = $derived(!!fetchConfig);
+const isDynamic = $derived(!!fetchConfig && !staticData);
 
 // 状态
 let activeTab = $state("");
@@ -51,7 +51,7 @@ $effect(() => {
 	if (initialActiveTab) {
 		activeTab = initialActiveTab;
 	}
-	if (fetchConfig) {
+	if (fetchConfig && isDynamic) {
 		fetchLoading = true;
 		error = false;
 	}
@@ -67,8 +67,11 @@ let dynamicTabs = $state<Array<{ id: string; name: string; count: number }>>(
 let dynamicData = $state<Record<string, UserSubjectCollection[]>>({});
 
 // 合并后的数据
-const tabs = $derived(staticTabs || dynamicTabs);
-const bangumiData = $derived(staticData || dynamicData);
+// 手动刷新成功后 dynamicTabs 才有内容，此时优先用它（静态快照退居后备）
+const tabs = $derived(dynamicTabs.length > 0 ? dynamicTabs : staticTabs || []);
+const bangumiData = $derived(
+	dynamicTabs.length > 0 ? dynamicData : staticData || {},
+);
 
 const categoryMap: Record<string, { name: string; subjectType: number }> = {
 	book: { name: i18n(I18nKey.bangumiCategoryBook), subjectType: 1 },
@@ -172,7 +175,10 @@ async function loadDynamicData() {
 
 	dynamicTabs = newTabs;
 	dynamicData = newData;
-	activeTab = newTabs[0].id;
+	// 刷新时保留当前分类；只有首次加载（activeTab 为空或已失效）才回到第一个
+	if (!newTabs.some((t) => t.id === activeTab)) {
+		activeTab = newTabs[0].id;
+	}
 	fetchLoading = false;
 
 	const now = new Date();
@@ -204,6 +210,40 @@ onMount(async () => {
 	if (isDynamic) {
 		await loadDynamicData();
 	}
+});
+
+// ── 手动刷新 ──────────────────────────────────────────────
+// 静态模式下数据是构建时抓的快照，页面头部的小按钮可以让访客
+// 立刻从 API 拉一次最新数据，不必等下一次部署。
+let refreshing = $state(false);
+
+function syncUpdatedAtLabel() {
+	const el = document.getElementById("bangumi-updated-at");
+	if (!el) return;
+	const d = new Date();
+	const pad = (n: number) => String(n).padStart(2, "0");
+	el.textContent = `${d.getFullYear()}年${d.getMonth() + 1}月${d.getDate()}日 ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+
+async function refreshFromApi() {
+	if (!fetchConfig || refreshing) return;
+	refreshing = true;
+	error = false;
+	try {
+		await loadDynamicData();
+		if (!error) syncUpdatedAtLabel();
+	} finally {
+		refreshing = false;
+		// 通知页面头部把按钮的转圈动画停掉
+		document.dispatchEvent(
+			new CustomEvent("bangumi:refreshed", { detail: { ok: !error } }),
+		);
+	}
+}
+
+onMount(() => {
+	document.addEventListener("bangumi:refresh", refreshFromApi);
+	return () => document.removeEventListener("bangumi:refresh", refreshFromApi);
 });
 </script>
 
