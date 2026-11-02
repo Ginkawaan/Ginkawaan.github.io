@@ -150,10 +150,10 @@ function validatePost(rel) {
 
 // ── commit message ──────────────────────────────────────────
 // 文章一条提交、其他文件另一条，避免「改了 CSS 却挂在文章名下面」
-function buildPostMessage(added, modified, removed) {
-	const titleOf = (p) =>
-		typeof p === "string" ? path.basename(p, ".md") : (p?.title ?? "");
-	const first = titleOf(added[0] ?? modified[0] ?? "");
+// titleOf 由调用方传入：能查到标题就用标题，查不到才退回文件名
+function buildPostMessage(added, modified, removed, titleOf) {
+	const nameOf = (p) => titleOf(p) || path.basename(p, ".md");
+	const first = nameOf(added[0] ?? modified[0] ?? "");
 	if (added.length === 1 && modified.length === 0 && removed.length === 0) {
 		return `feat(post): 新增《${first}》`;
 	}
@@ -161,7 +161,7 @@ function buildPostMessage(added, modified, removed) {
 		return `docs(post): 更新《${first}》`;
 	}
 	if (added.length === 0 && modified.length === 0 && removed.length === 1) {
-		return `chore(post): 删除《${path.basename(removed[0], ".md")}》`;
+		return `chore(post): 删除《${nameOf(removed[0])}》`;
 	}
 
 	const parts = [];
@@ -274,6 +274,7 @@ log(
 step(++stepNo, TOTAL, "校验文章");
 const problems = [];
 const addedInfo = [];
+const postInfo = [];
 
 for (const rel of [...added, ...modified]) {
 	const r = validatePost(rel);
@@ -292,7 +293,11 @@ for (const rel of [...added, ...modified]) {
 		note(`${path.basename(rel)}：draft 改回 false，这篇会重新上线`);
 	}
 	if (added.includes(rel)) addedInfo.push(r);
+	postInfo.push(r);
 }
+
+// 提交信息里用文章标题，而不是文件名
+const titleOf = (p) => postInfo.find((r) => r.rel === p)?.title ?? "";
 
 for (const rel of removed) note(`${path.basename(rel)}：将被删除`);
 
@@ -413,7 +418,7 @@ if (postChanges.length > 0) {
 		ok(`并入上一条提交：${kept}`);
 		amended = true;
 	} else {
-		const message = buildPostMessage(addedInfo, modified, removed);
+		const message = buildPostMessage(addedInfo, modified, removed, titleOf);
 		git(["commit", "-m", message], { stdio: "pipe" });
 		showCommit(message, postChanges);
 	}
@@ -453,7 +458,7 @@ try {
 line();
 log("  发布成功，GitHub Actions 正在构建（约 1~2 分钟）");
 log("");
-const live = addedInfo.filter((p) => !p.draft);
+const live = postInfo.filter((p) => !p.draft);
 if (live.length === 0) {
 	note("这次提交里没有可上线的文章（都是 draft: true）");
 } else {
