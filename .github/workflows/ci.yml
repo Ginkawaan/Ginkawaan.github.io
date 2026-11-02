@@ -1,0 +1,63 @@
+name: CI
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # 代码规范：Biome（原 biome.yml）
+  quality:
+    runs-on: ubuntu-latest
+    name: Biome
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Setup Biome
+        uses: biomejs/setup-biome@v2
+        with:
+          # 必须与 package.json 的 @biomejs/biome 版本一致。
+          # 写 latest 会拉到新大版本，biome.json 需要 migrate，且会开始格式化 md 文件，
+          # 结果就是本地全绿、CI 全红。
+          version: 2.5.12
+
+      - name: Run Biome
+        run: biome ci ./src --reporter=github
+
+  # 类型与构建校验：原 build.yml 的 astro check
+  # 去掉 Node 22/23 双版本矩阵（23 非 LTS，且构建已在 deploy.yml 里做过一遍）
+  check:
+    runs-on: ubuntu-latest
+    name: Astro Check
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 11.22.0
+          run_install: false
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: '22'
+
+      - name: Install dependencies
+        run: pnpm install --no-frozen-lockfile
+
+      - name: Run Astro Check
+        run: pnpm astro check

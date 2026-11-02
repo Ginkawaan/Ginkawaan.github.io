@@ -3,11 +3,13 @@ name: Deploy to GitHub Pages
 on:
   push:
     branches: [ master ]
+  # 需要手动刷新收藏数据时：Actions → Deploy to GitHub Pages → Run workflow
+  # 原先的 schedule（每 6 小时一次）已移除，避免 Actions 列表被定时运行堆满
   workflow_dispatch:
-  # 定时重建：让静态抓取的数据（收藏页等）按时间自动更新
-  # 每 6 小时一次（UTC）：00:00 / 06:00 / 12:00 / 18:00 → 北京时间 08:00 / 14:00 / 20:00 / 02:00
-  schedule:
-    - cron: '0 0,6,12,18 * * *'
+
+# 所有 JS Action 统一跑在 Node 24 上，消除 "Node.js 20 已弃用" 告警
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
 # Pages 部署需要的权限
 permissions:
@@ -26,31 +28,33 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-      
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '22'
-          
+
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
         with:
           version: 11.22.0
           run_install: false
-          
+
       - name: Install dependencies
         run: pnpm install --no-frozen-lockfile
-      
+
       - name: Build site
         run: pnpm run build
 
       - name: Create .nojekyll file
         run: touch dist/.nojekyll
-      
+
       - name: Upload artifact
-        uses: actions/upload-pages-artifact@v3
+        uses: actions/upload-pages-artifact@v5
         with:
           path: dist  # Astro默认构建输出目录
+          # v4 起默认排除 dotfiles，不加这行 .nojekyll 会被丢掉
+          include-hidden-files: true
 
   deploy:
     environment:
@@ -61,4 +65,4 @@ jobs:
     steps:
       - name: Deploy to GitHub Pages
         id: deployment
-        uses: actions/deploy-pages@v4
+        uses: actions/deploy-pages@v5
