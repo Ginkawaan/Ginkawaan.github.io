@@ -9,6 +9,10 @@
  *   --no-build  跳过构建验证（快，但语法错要等线上 Actions 报错才知道）
  *   --dry-run   只检查不提交
  *   --no-amend  每次都新建提交（默认会把「只改已有文章」的改动并进上一条提交）
+ *
+ * 提交规则：文章改动与非文章改动分成两条提交，message 各自说明自己改了什么
+ *   docs(post): 更新《喜好》          ← 只有文章
+ *   chore(ui): 更新 bangumi.astro     ← 只有代码/样式/图片
  */
 
 import { execFileSync, execSync } from "node:child_process";
@@ -119,14 +123,8 @@ function validatePost(rel) {
 }
 
 // ── commit message ──────────────────────────────────────────
-function buildMessage(added, modified, removed, others) {
-	// 只有非文章文件时，按文件名生成
-	if (added.length === 0 && modified.length === 0 && removed.length === 0) {
-		const names = others.slice(0, 3).map((c) => path.basename(c.path));
-		const tail = others.length > 3 ? ` 等 ${others.length} 个文件` : "";
-		return `chore: 更新 ${names.join("、")}${tail}`;
-	}
-
+// 文章一条提交、其他文件另一条，避免「改了 CSS 却挂在文章名下面」
+function buildPostMessage(added, modified, removed) {
 	const titleOf = (p) =>
 		typeof p === "string" ? path.basename(p, ".md") : (p?.title ?? "");
 	const first = titleOf(added[0] ?? modified[0] ?? "");
@@ -146,6 +144,44 @@ function buildMessage(added, modified, removed, others) {
 	if (removed.length) parts.push(`删除 ${removed.length} 篇`);
 	const head = first ? `（含《${first}》）` : "";
 	return `docs(post): ${parts.join("、")}${head}`;
+}
+
+function buildOthersMessage(others) {
+	const area = (p) => {
+		if (p.startsWith("src/config/")) return "config";
+		if (p.startsWith("src/content/")) return "content";
+		if (p.startsWith("src/components/")) return "ui";
+		if (p.startsWith("src/pages/")) return "ui";
+		if (p.startsWith("src/layouts/")) return "ui";
+		if (p.startsWith("src/styles/")) return "style";
+		if (p.startsWith("src/")) return "src";
+		if (p.startsWith("public/")) return "assets";
+		if (p.startsWith(".github/")) return "ci";
+		if (p.startsWith("scripts/")) return "script";
+		if (p.startsWith("_templates/")) return "template";
+		return "misc";
+	};
+
+	const seen = [];
+	for (const c of others) {
+		const a = area(c.path);
+		if (!seen.includes(a)) seen.push(a);
+	}
+
+	const names = others.slice(0, 3).map((c) => path.basename(c.path));
+	const tail = others.length > 3 ? ` 等 ${others.length} 个文件` : "";
+	// 只涉及一个区域时带上 scope，混杂时就别塞一串括号了
+	const scope = seen.length === 1 ? `(${seen[0]})` : "";
+	return `chore${scope}: 更新 ${names.join("、")}${tail}`;
+}
+
+// 读 HEAD 里的版本，判断 draft 有没有被改（改了就意味着文章上线/下线）
+function previousDraft(rel) {
+	try {
+		return matter(git(["show", `HEAD:${rel}`])).data?.draft === true;
+	} catch {
+		return null; // 新文件
+	}
 }
 
 // ── 主流程 ──────────────────────────────────────────────────
@@ -207,6 +243,13 @@ for (const rel of [...added, ...modified]) {
 		ok(`${path.basename(rel)}　${r.title}`);
 	}
 	for (const n of r.notes) note(`${path.basename(rel)}：${n}`);
+	// draft 状态翻转意味着文章上线/下线，单独提醒一句
+	const prev = previousDraft(rel);
+	if (prev === false && r.draft) {
+		note(`${path.basename(rel)}：draft 改成了 true，提交后这篇会从线上消失`);
+	} else if (prev === true && !r.draft) {
+		note(`${path.basename(rel)}：draft 改回 false，这篇会重新上线`);
+	}
 	if (added.includes(rel)) addedInfo.push(r);
 }
 
@@ -304,18 +347,39 @@ function canAmend() {
 	return modified.every((f) => lastFiles.includes(f));
 }
 
-git(["add", "-A"]);
+// 文章与其它文件分成两条提交，各自的 message 才说得清自己改了什么
+const postChanges = [...added, ...modified, ...removed];
+
+function showCommit(msg, files) {
+	ok(msg);
+	for (const f of files.slice(0, 6)) log(`           ${f}`);
+	if (files.length > 6) log(`           …等 ${files.length} 个文件`);
+}
 
 let amended = false;
-if (canAmend()) {
-	git(["commit", "--amend", "--no-edit"], { stdio: "pipe" });
-	const kept = git(["log", "-1", "--pretty=%s"]).trim();
-	ok(`并入上一条提交：${kept}`);
-	amended = true;
-} else {
-	const message = buildMessage(addedInfo, modified, removed, others);
+
+if (postChanges.length > 0) {
+	git(["add", "--", ...postChanges]);
+	if (canAmend()) {
+		git(["commit", "--amend", "--no-edit"], { stdio: "pipe" });
+		const kept = git(["log", "-1", "--pretty=%s"]).trim();
+		ok(`并入上一条提交：${kept}`);
+		amended = true;
+	} else {
+		const message = buildPostMessage(addedInfo, modified, removed);
+		git(["commit", "-m", message], { stdio: "pipe" });
+		showCommit(message, postChanges);
+	}
+}
+
+if (others.length > 0) {
+	git(["add", "-A"]);
+	const message = buildOthersMessage(others);
 	git(["commit", "-m", message], { stdio: "pipe" });
-	ok(message);
+	showCommit(
+		message,
+		others.map((c) => c.path),
+	);
 }
 
 // 推送
