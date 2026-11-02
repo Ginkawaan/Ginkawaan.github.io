@@ -1,7 +1,7 @@
 ---
 title: 关于 2026 年的感动
 published: 2026-10-25
-description: “我在拼命传送着我的感动”
+description: “ 我在拼命地传达着我的感动 ”
 tags:
   - 分享
 category: 安利
