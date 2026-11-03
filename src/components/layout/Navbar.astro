@@ -460,3 +460,14 @@ if (document.readyState === 'loading') {
         </script>
     )
 }
+
+<style is:global>
+  /* 桌面端左侧栏已有「音乐」组件，这里隐藏导航栏的音乐入口，
+     避免同一个页面出现两个播放器；手机端侧栏不存在，仍保留这个入口。 */
+  @media (min-width: 768px) {
+    #music-player-switch,
+    #music-nav-panel {
+      display: none !important;
+    }
+  }
+</style>
