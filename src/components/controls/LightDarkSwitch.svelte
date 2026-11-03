@@ -32,6 +32,54 @@ function switchScheme(newMode: LIGHT_DARK_MODE) {
 	updateDisplayedMode();
 }
 
+// ── 交互：单击切换亮/暗，长按或右键打开面板（保留「跟随系统」）────────
+function setPanel(open: boolean) {
+	const panel = document.getElementById("theme-mode-panel");
+	if (!panel) return;
+	panel.classList.toggle("float-panel-closed", !open);
+}
+
+// 面板里选完之后顺手收起
+function pickScheme(next: LIGHT_DARK_MODE) {
+	switchScheme(next);
+	setPanel(false);
+}
+
+let longPressTimer: ReturnType<typeof setTimeout> | null = null;
+let longPressed = false;
+
+function onPointerDown() {
+	longPressed = false;
+	longPressTimer = setTimeout(() => {
+		longPressed = true;
+		setPanel(true);
+	}, 450);
+}
+
+function clearLongPress() {
+	if (longPressTimer) {
+		clearTimeout(longPressTimer);
+		longPressTimer = null;
+	}
+}
+
+function onSchemeClick() {
+	// 长按已经弹面板了，这次点击不再切主题
+	if (longPressed) {
+		longPressed = false;
+		return;
+	}
+	// system 模式下按「当前实际显示」取反，用户点一下就能换到对面
+	switchScheme(displayedMode === DARK_MODE ? LIGHT_MODE : DARK_MODE);
+	setPanel(false);
+}
+
+function onContextMenu(e: MouseEvent) {
+	e.preventDefault();
+	clearLongPress();
+	setPanel(true);
+}
+
 // 更新显示的主题（用于显示当前实际主题）
 function updateDisplayedMode() {
 	if (mode === SYSTEM_MODE) {
@@ -115,7 +163,21 @@ onMount(() => {
 </script>
 
 <div class="z-50">
-	<button aria-label="Light/Dark Mode" aria-haspopup="menu" aria-controls="theme-mode-panel" aria-expanded="false" class="relative btn-plain scale-animation rounded-lg h-11 w-11 active:scale-90" id="scheme-switch">
+	<button
+		aria-label="Light/Dark Mode"
+		aria-haspopup="menu"
+		aria-controls="theme-mode-panel"
+		aria-expanded="false"
+		class="relative btn-plain scale-animation rounded-lg h-11 w-11 active:scale-90"
+		id="scheme-switch"
+		title="单击切换亮/暗，长按或右键选择跟随系统"
+		onclick={onSchemeClick}
+		onpointerdown={onPointerDown}
+		onpointerup={clearLongPress}
+		onpointerleave={clearLongPress}
+		onpointercancel={clearLongPress}
+		oncontextmenu={onContextMenu}
+	>
         <div class="absolute inset-0 flex items-center justify-center" class:opacity-0={displayedMode !== LIGHT_MODE}>
             <Icon icon="material-symbols:wb-sunny-outline-rounded" class="text-[1.25rem]"></Icon>
         </div>
@@ -128,7 +190,7 @@ onMount(() => {
             role="menuitem"
             isActive={mode === LIGHT_MODE}
             isLast={false}
-            onclick={() => switchScheme(LIGHT_MODE)}
+            onclick={() => pickScheme(LIGHT_MODE)}
         >
             <Icon icon="material-symbols:wb-sunny-outline-rounded" class="text-[1.25rem] mr-3"></Icon>
             {i18n(I18nKey.lightMode)}
@@ -137,7 +199,7 @@ onMount(() => {
             role="menuitem"
             isActive={mode === DARK_MODE}
             isLast={false}
-            onclick={() => switchScheme(DARK_MODE)}
+            onclick={() => pickScheme(DARK_MODE)}
         >
             <Icon icon="material-symbols:dark-mode-outline-rounded" class="text-[1.25rem] mr-3"></Icon>
             {i18n(I18nKey.darkMode)}
@@ -146,7 +208,7 @@ onMount(() => {
             role="menuitem"
             isActive={mode === SYSTEM_MODE}
             isLast={true}
-            onclick={() => switchScheme(SYSTEM_MODE)}
+            onclick={() => pickScheme(SYSTEM_MODE)}
         >
             <Icon icon="material-symbols:brightness-auto-outline-rounded" class="text-[1.25rem] mr-3"></Icon>
             {i18n(I18nKey.systemMode)}
