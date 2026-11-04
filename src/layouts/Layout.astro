@@ -144,6 +144,12 @@ if (isGeneratedOg) {
 	ogImageUrl = postCoverImage; // 已由文章页算成绝对 URL
 	ogImageWidth = propsOgImageWidth;
 	ogImageHeight = propsOgImageHeight;
+} else if (siteConfig.post.generateOgImages) {
+	// 非文章页（首页/归档等）用站点级生成图，尺寸与文章图一致，
+	// 否则会回退到 192×192 的 favicon，预览卡片会是一块小方块
+	ogImageUrl = new URL("/og/site.png", Astro.site).toString();
+	ogImageWidth = 1200;
+	ogImageHeight = 630;
 } else if (siteLogo?.url) {
 	ogImageUrl = siteLogo.url;
 	ogImageWidth = siteLogo.width;

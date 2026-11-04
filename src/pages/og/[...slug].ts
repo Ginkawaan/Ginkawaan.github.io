@@ -18,14 +18,18 @@ export const getStaticPaths: GetStaticPaths = async () => {
 	const allPosts = await getCollection("posts");
 	const publishedPosts = allPosts.filter((post) => !post.data.draft);
 
-	return publishedPosts.map((post) => {
-		// 将 id 转换为 slug（移除扩展名）以匹配路由参数
-		const slug = removeFileExtension(post.id);
-		return {
-			params: { slug: `${slug}.png` },
-			props: { post },
-		};
-	});
+	return [
+		// 站点级 OG 图：首页等非文章页用它，避免回退到 192×192 的 favicon
+		{ params: { slug: "site.png" }, props: { site: true } },
+		...publishedPosts.map((post) => {
+			// 将 id 转换为 slug（移除扩展名）以匹配路由参数
+			const slug = removeFileExtension(post.id);
+			return {
+				params: { slug: `${slug}.png` },
+				props: { post },
+			};
+		}),
+	];
 };
 
 // OG 图用的中文字体从 @fontsource 包本地读取，构建期不再请求 Google Fonts。
@@ -215,8 +219,11 @@ const loadImageAsArrayBuffer = async (
 
 export async function GET({
 	props,
-}: APIContext<{ post: CollectionEntry<"posts"> }>): Promise<Response> {
-	const { post } = props;
+}: APIContext<{
+	post?: CollectionEntry<"posts">;
+	site?: boolean;
+}>): Promise<Response> {
+	const { post, site } = props;
 
 	// Load and get static assets
 	let iconPath = "/favicon/favicon-dark-192.png";
@@ -233,13 +240,15 @@ export async function GET({
 	const subtleTextColor = `hsl(${hue}, 10%, 75%)`;
 	const backgroundColor = `hsl(${hue}, 15%, 12%)`;
 
-	const pubDate = post.data.published.toLocaleDateString("en-US", {
-		year: "numeric",
-		month: "short",
-		day: "numeric",
-	});
+	const pubDate = site
+		? ""
+		: (post?.data.published ?? new Date()).toLocaleDateString("en-US", {
+				year: "numeric",
+				month: "short",
+				day: "numeric",
+			});
 
-	const description = post.data.description;
+	const description = site ? siteConfig.description : post?.data.description;
 
 	return new ImageResponse(
 		{
@@ -344,7 +353,9 @@ export async function GET({
 														display: "flex",
 														flexDirection: "column",
 													},
-													children: post.data.title,
+													children: site
+														? siteConfig.title
+														: (post?.data.title ?? siteConfig.title),
 												},
 											},
 										],
@@ -427,7 +438,9 @@ export async function GET({
 									type: "div",
 									props: {
 										style: { fontSize: "28px", color: subtleTextColor },
-										children: pubDate,
+										children: site
+											? siteConfig.site_url.replace(/^https?:\/\//, "")
+											: pubDate,
 									},
 								},
 							],
